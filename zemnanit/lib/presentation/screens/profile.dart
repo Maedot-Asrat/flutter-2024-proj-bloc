@@ -4,6 +4,11 @@ import 'package:zemnanit/Application/auth/auth_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:zemnanit/Application/auth/auth_event.dart';
 import 'package:zemnanit/Application/auth/auth_state.dart';
+import 'package:zemnanit/Application/booking_bloc/booking_bloc.dart';
+import 'package:zemnanit/Application/nav_bloc/navigation_bloc.dart';
+import 'package:zemnanit/Application/salons/salons_bloc.dart';
+import 'package:zemnanit/Infrastructure/Repositories/books_repo.dart';
+import 'package:zemnanit/Infrastructure/Repositories/salons_repo.dart';
 import 'package:zemnanit/presentation/screens/common_widgets/appbar.dart';
 import 'package:zemnanit/presentation/screens/create_user.dart';
 import 'package:zemnanit/presentation/screens/login_user.dart';
@@ -84,22 +89,31 @@ class Profile extends StatelessWidget {
             ),
             ElevatedButton(
                 onPressed: () {
-                  context.read<AuthBloc>().add(
-                        UpdatePasswordRequested(
-                          email: '$email',
-                          oldPassword: passwordControler.text,
-                          newPassword: newPasswordControler.text,
-                        ),
-                      );
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => BlocProvider(
-                                create: (context) => AuthBloc(
-                                    baseUrl: 'http://localhost:3000',
-                                    httpClient: http.Client()),
-                                child: Log_in(),
-                              )));
+                  if (passwordControler.text.isEmpty ||
+                      newPasswordControler.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Please enter both email and password'),
+                      ),
+                    );
+                  } else {
+                    context.read<AuthBloc>().add(
+                          UpdatePasswordRequested(
+                            email: '$email',
+                            oldPassword: passwordControler.text,
+                            newPassword: newPasswordControler.text,
+                          ),
+                        );
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => BlocProvider(
+                                  create: (context) => AuthBloc(
+                                      baseUrl: 'http://localhost:3000',
+                                      httpClient: http.Client()),
+                                  child: Log_in(),
+                                )));
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.lightBlue, // Background color
@@ -146,8 +160,30 @@ class Profile extends StatelessWidget {
                 SizedBox(width: 10),
                 ElevatedButton(
                     onPressed: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => MyAppp()));
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => MultiBlocProvider(
+                                    providers: [
+                                      BlocProvider(
+                                        create: (context) => AuthBloc(
+                                            baseUrl: 'http://localhost:3000',
+                                            httpClient: http.Client()),
+                                      ),
+                                      BlocProvider(
+                                        create: (context) =>
+                                            BookingBloc(BookingRepo()),
+                                      ),
+                                      BlocProvider(
+                                        create: (context) =>
+                                            SalonsBloc(SalonsRepo()),
+                                      ),
+                                      BlocProvider(
+                                        create: (context) => NavigationBloc(),
+                                      ),
+                                    ],
+                                    child: MyAppp(),
+                                  )));
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red[400], // Background color
